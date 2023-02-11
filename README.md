@@ -6,9 +6,17 @@ _A single ROM image containing six distinct tests that will aid you in developin
 your own CHIP-8, SCHIP or XO-CHIP interpreter (or "emulator")_
 
 * [Download the ROM here](./bin/chip8-test-suite.ch8?raw=true), give it a spin and
-see if your interpreter is doing the right thing! 😄
+see if your interpreter is doing the right thing<sup>[1]</sup>! 😄
 * Or [run the test suite in Octo](https://timendus.github.io/chip8-test-suite/) to
 see what it **should** be doing 🙄 (it's set to "Cosmac VIP" CHIP-8 mode)
+
+<sup>[1]</sup> If you've only just started developing your interpreter, please
+see the chapter on [Auto-starting a specific
+test](#auto-starting-a-specific-test) on how you can bypass the menu and
+immediately jump to specific tests! If your interpreter has been fully
+implemented correctly, you should expect to be able to navigate all the tests
+through a graphical menu, and see them all pass, like in the animated screenshot
+below:
 
 ![The test suite running in CHIP-8 mode on Octo](./pictures/animation.gif)
 
@@ -24,6 +32,7 @@ see what it **should** be doing 🙄 (it's set to "Cosmac VIP" CHIP-8 mode)
     * [Flags test](#flags-test)
     * [Quirks test](#quirks-test)
     * [Keypad test](#keypad-test)
+  * [Contributing](#contributing)
   * [Community response 😄](#community-response-)
 
 ## Introduction
@@ -59,16 +68,27 @@ interface too.
 
 ## Auto-starting a specific test
 
-When you're repeatedly testing the same thing, if you're just starting out and
-you have very few opcodes implemented, or if you're trying to automate your
-tests, having to use the menu gets in the way. In that case, you can force the
-ROM to immediately start a specific test by setting a magic value in RAM. It
-will then skip waiting for a keypress and the menu entirely. To do so:
+If you're just starting out and you have very few opcodes implemented, or if you
+want to repeat a test often or even automate them, having to use the graphical
+menu and the keys often just gets in the way.
+
+In that case, you can force the ROM to immediately start a specific test by
+setting a magic value in RAM. It will then skip waiting for a keypress and the
+menu entirely. To do so:
 
   1. Load the ROM file in memory at address `0x200` (`512`) like you normally do
-  2. Set the specific test you wish to run by loading a value between 1 and 5 in
-     memory at address `0x1FF` (`511`)
+  2. Set the specific test you wish to run by loading a value between `1` and
+     `5` in memory at address `0x1FF` (`511`)
   3. Start execution of the ROM from address `0x200` like you normally do
+
+Note that your interpreter needs to support at least these opcodes for this
+feature to succeed in starting the requested test:
+
+  * `ANNN` - Load index register with immediate value
+  * `FX65` - Load register(s) from memory _(only `F065`, if that makes things
+    easier for you)_
+  * `4XNN` - Skip next instruction if unequal _(again, only `40NN` in practice)_
+  * `1NNN` - Jump
 
 ## About the tests
 
@@ -105,22 +125,23 @@ original.
 
 ![IBM logo, shown on the display](./pictures/ibm-logo.png)
 
-Run the ROM for 64 cycles to see the IBM logo on the display. If you can see the
-IBM logo, you are properly interpreting these opcodes in addition to the opcodes
-used by the [CHIP-8 splash screen](#chip-8-splash-screen):
+If the graphical menu works for you, just select "IBM LOGO" from the menu.
+Otherwise:
 
-  * To get to the IBM logo code from the CHIP-8 splash screen:
+Load the value `1` into memory at `0x1FF`, load the ROM in memory starting from
+`0x200` and start your interpreter. Run the ROM for 64 cycles to see the IBM
+logo on the display. If you can see the IBM logo, you are properly interpreting
+these opcodes in addition to the opcodes used by the [CHIP-8 splash
+screen](#chip-8-splash-screen):
+
+  * To get to the IBM logo code from the CHIP-8 splash screen using the
+    [Auto-start feature](#auto-starting-a-specific-test):
     * `1NNN` - Jump
-    * `FX65` - Load register from memory
+    * `FX65` - Load register(s) from memory
     * `4XNN` - Skip next instruction if unequal
   * To show the IBM logo:
     * `7XNN` - Add immediate value to normal register
     * `DXYN` - Draw sprite to screen (un-aligned)
-
-#### Auto starting
-
-To auto-start, load the value `1` into memory at `0x1FF`, load the ROM in memory
-starting from `0x200` and start your interpreter.
 
 ### Corax89's opcode test
 
@@ -131,6 +152,10 @@ a couple of [minor issues with the
 ROM](https://github.com/corax89/chip8-test-rom/pulls) and Corax89 doesn't really
 seem to be maintaining this ROM anymore. So I've taken the liberty to include it
 in this suite, with those issues fixed and some minor cosmetic improvements.
+
+To auto-start this test, load the value `2` into memory at `0x1FF`, load the ROM
+in memory starting from `0x200` and start your interpreter. After a while you
+should be seeing this screen:
 
 ![Corax89's opcode test](./pictures/corax89.png)
 
@@ -151,11 +176,6 @@ see `NO` you can be sure that you have an issue with that opcode.
 If you are having trouble figuring out how each opcode is supposed to behave,
 check out [Tobias' guide](https://tobiasvl.github.io/blog/write-a-chip-8-emulator/#instructions).
 
-#### Auto starting
-
-To auto-start, load the value `2` into memory at `0x1FF`, load the ROM in memory
-starting from `0x200` and start your interpreter.
-
 ### Flags test
 
 This test is an adaptation of the [maths tests I
@@ -163,9 +183,13 @@ wrote](https://github.com/Timendus/silicon8/tree/main/tests) for my interpreter
 [Silicon8](https://github.com/Timendus/silicon8). It checks to see if your math
 operations function properly on some given set of input values. But more
 importantly: it checks to see if you set the flag register `vF` properly when
-running those opcodes, and if you don't mess up `vF` too early (when used as an
-input). This is often an issue as the flags are pretty unintuitive and fairly
-hard to debug.
+running those opcodes, and if you don't mess up `vF` too early (when `vF` is
+used as one of the operands). This is often an issue as the flags are pretty
+unintuitive and fairly hard to debug.
+
+To auto-start this test, load the value `3` into memory at `0x1FF`, load the ROM
+in memory starting from `0x200` and start your interpreter. After a while you
+should be seeing this screen:
 
 ![The flags test](./pictures/flags.png)
 
@@ -175,6 +199,13 @@ flag is correct (second checkmark) and if the order in which the `vF` register
 is read and written to is correct (third checkmark). If you see a cross instead
 of a checkmark in any of these spots, you have an issue in your interpreter
 logic.
+
+First, a note on the third checkmark, for the `vF` order: This checks to see if
+an instruction where `vF` is one of the operands (like `v0 += vF` / `0x80F4`)
+works as expected. It's easy to make the mistake of setting the `vF` register
+first, and then performing the mathematical operation. If you do that, however,
+`vF` will not hold the right value anymore at calculation time and your maths
+will be off when using that register as an input.
 
 The top part (that starts with "HAPPY" for "happy path") checks the behaviour of
 the following opcodes, in the case where we **don't** expect an overflow, carry
@@ -214,21 +245,9 @@ adds the value of register `vX` to the index register. For this test, only the
 value is checked as overflow of the index register is not really defined in
 CHIP-8 (and no ROMs rely on it as far as I know).
 
-A note on the third checkmark, for the `vF` order: This basically checks to see
-if something like `v0 += vF` works as expected (the value of `vF` gets added to
-`v0`). It's easy to make the mistake of setting the `vF` register first, and
-then performing the mathematical operation. If you do that, however, `vF` will
-not hold the right value anymore and your maths will be off when using that
-register as an input.
-
 See [this article](https://laurencescotford.com/chip-8-on-the-cosmac-vip-arithmetic-and-logic-instructions/)
 or [this article](https://tobiasvl.github.io/blog/write-a-chip-8-emulator/#logical-and-arithmetic-instructions)
 for more information on the arithmetic operations and the flags.
-
-#### Auto starting
-
-To auto-start, load the value `3` into memory at `0x1FF`, load the ROM in memory
-starting from `0x200` and start your interpreter.
 
 ### Quirks test
 
@@ -246,7 +265,7 @@ This menu works exactly the same as the main menu in terms of
 [controls](#controls).
 
 The test will now run through a couple of steps, which you will see on the
-screen as some garbage and a bunch of smiley faces. After about two seconds, you
+screen as some garbage and a flickering pixel. After about two seconds, you
 should see this screen:
 
 ![Showing the active quirks](./pictures/quirks.png)
@@ -278,6 +297,9 @@ platform (a checkmark or a cross).
 
 Note that you need timer support for this test to run.
 
+See this [excellent
+table](https://games.gulrak.net/cadmium/chip8-opcode-table.html) by Gulrak for
+an overview of all the known quirks for the relatively popular CHIP-8 versions.
 See [this website](https://chip-8.github.io/extensions/) for a lot more
 information about all the historical versions of the platform and the different
 quirks among them.
@@ -345,6 +367,33 @@ To auto-start this test, load the value `5` into memory at `0x1FF` and load the
 ROM in memory starting from `0x200`. Additionally, you can also force the target
 opcode by loading a value between 1 and 3 into memory at the address `0x1FE`
 (510).
+
+## Contributing
+
+Do you find an issue in this test suite that you think you can fix? Feel free to
+submit a PR! Here's how to build the project, assuming you have Nodejs and NPM
+installed:
+
+```bash
+git clone git@github.com:Timendus/chip8-test-suite.git
+cd chip8-test-suite
+npm install
+```
+```bash
+npm run build         # Build the source to `bin/chip8-test-suite.8o`
+npm run build-binary  # Build the above plus the binary `bin/chip8-test-suite.ch8`
+npm run build-html    # Build `bin/chip8-test-suite.8o` and `docs/index.html`
+npm run build-all     # Build all of the above
+```
+
+Note that the `npm run build*` scripts use the MacOS command `pbcopy` to copy
+the resulting Octo source file to the clipboard. Depending on your OS this may
+not work properly. Edit `package.json` and remove this part from `scripts` ->
+`build` if you get errors:
+
+```
+ && cat bin/chip8-test-suite.8o | pbcopy
+```
 
 ## Community response 😄
 
